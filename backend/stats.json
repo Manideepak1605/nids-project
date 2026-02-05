@@ -1,0 +1,11 @@
+{
+  "total_analyzed": 100,
+  "allowed": 95,
+  "blocked": 5,
+  "attack_types": {
+    "DoS": 4,
+    "Bot": 1
+  },
+  "risk_level": "LOW",
+  "last_updated": "2026-02-05 15:14:58"
+}
