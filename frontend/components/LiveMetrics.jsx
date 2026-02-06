@@ -39,7 +39,7 @@ const LiveMetrics = () => {
     };
 
     return (
-        <div className="flex flex-wrap gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
             {[
                 { label: 'Total Traffic', value: metrics.totalEvents, icon: Activity, color: 'violet', sub: 'Active Flow' },
                 { label: 'Attacks Blocked', value: metrics.attacks, icon: ShieldAlert, color: 'violet', sub: 'Vibranium Firewall' },
@@ -48,17 +48,17 @@ const LiveMetrics = () => {
             ].map((slab, i) => (
                 <div
                     key={slab.label}
-                    className="flex-1 min-w-[200px] bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex items-center gap-4 hover:border-violet-500/40 hover:bg-white/10 transition-all duration-300 group shadow-lg hover:shadow-violet-600/10"
+                    className="group bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 transition-all hover:scale-[1.02] hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-600/10"
                 >
-                    <div className={`p-2 rounded-xl bg-${slab.color}-500/10 border border-${slab.color}-500/20 group-hover:scale-110 transition-transform`}>
-                        <slab.icon className={`text-${slab.color}-400`} size={20} strokeWidth={2.5} />
-                    </div>
-                    <div>
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-0.5">{slab.label}</p>
-                        <div className="flex items-baseline gap-2">
-                            <h3 className="text-2xl font-bold text-white tracking-tight leading-none">{slab.value}</h3>
-                            <span className="text-[8px] font-bold text-violet-400 opacity-50 uppercase tracking-widest">{slab.sub}</span>
+                    <div className="flex items-center justify-between mb-4">
+                        <p className="text-gray-400 text-sm font-medium">{slab.label}</p>
+                        <div className={`p-2 rounded-xl bg-${slab.color}-500/10 border border-${slab.color}-500/20 group-hover:scale-110 transition-transform`}>
+                            <slab.icon className={`text-${slab.color}-400`} size={20} strokeWidth={2.5} />
                         </div>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                        <h3 className="text-3xl font-bold text-white tracking-tight">{slab.value}</h3>
+                        <span className="text-[10px] font-bold text-violet-400/60 uppercase tracking-widest">{slab.sub}</span>
                     </div>
                 </div>
             ))}
