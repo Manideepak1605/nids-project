@@ -1,8 +1,12 @@
 import asyncio
 import argparse
 import json
+import os
+import datetime
+import random
+import io
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from capture import MockCapture, RealCapture
 from features import FeatureExtractor
@@ -34,12 +38,56 @@ class NIDSManager:
         if detection_result["is_malicious"]:
             self.mitigator.mitigate(detection_result)
         
+        # Update global stats
+        self.update_stats(detection_result)
+        
         # 4. Notify Dashboard (Thread-safe broadcast)
         if self.active_connections:
             asyncio.run_coroutine_threadsafe(
                 self.broadcast_event(detection_result), 
                 self.loop
             )
+
+    def update_stats(self, detection_result):
+        stats_file = "stats.json"
+        try:
+            stats = {
+                "total_analyzed": 0,
+                "allowed": 0,
+                "blocked": 0,
+                "attack_types": {},
+                "risk_level": "LOW",
+                "last_updated": None
+            }
+            
+            if os.path.exists(stats_file):
+                with open(stats_file, "r") as f:
+                    try:
+                        stats = json.load(f)
+                    except:
+                        pass
+            
+            stats["total_analyzed"] += 1
+            if detection_result["is_malicious"]:
+                stats["blocked"] += 1
+                attack_type = detection_result["attack_type"]
+                stats["attack_types"][attack_type] = stats["attack_types"].get(attack_type, 0) + 1
+            else:
+                stats["allowed"] += 1
+            
+            if stats["total_analyzed"] > 0:
+                attack_ratio = stats["blocked"] / stats["total_analyzed"]
+                if attack_ratio > 0.2: stats["risk_level"] = "CRITICAL"
+                elif attack_ratio > 0.1: stats["risk_level"] = "HIGH"
+                elif attack_ratio > 0.05: stats["risk_level"] = "MEDIUM"
+                else: stats["risk_level"] = "LOW"
+            
+            stats["last_updated"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            with open(stats_file, "w") as f:
+                json.dump(stats, f, indent=2)
+        except Exception as e:
+            print(f"Error updating stats: {e}")
 
     async def broadcast_event(self, event):
         countries = ["USA", "China", "Russia", "Germany", "Brazil", "India", "Japan", "UK", "France", "Canada"]
@@ -144,6 +192,57 @@ def get_status():
         "active_connections": len(manager.active_connections),
         "blocked_ips": list(manager.mitigator.blocked_ips)
     }
+
+@app.get("/stats")
+def get_stats():
+    stats_file = "stats.json"
+    if os.path.exists(stats_file):
+        with open(stats_file, "r") as f:
+            return json.load(f)
+    return {
+        "total_analyzed": 0,
+        "allowed": 0,
+        "blocked": 0,
+        "attack_types": {},
+        "risk_level": "LOW",
+        "last_updated": None
+    }
+
+@app.post("/analyze")
+async def analyze(file: UploadFile = File(...)):
+    if not manager.detector.models_loaded and manager.detector.mode == "REAL":
+        return {"error": "ML Models not loaded"}, 503
+    
+    try:
+        import pandas as pd
+        content = await file.read()
+        df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+        df.columns = df.columns.str.strip()
+        
+        results = []
+        max_samples = min(len(df), 100)
+        
+        for i in range(max_samples):
+            # Convert row to dict for extractor/detector
+            flow = df.iloc[i].to_dict()
+            res = manager.detector.analyze(flow)
+            res['index'] = i
+            res['flow_id'] = str(df.index[i])
+            results.append(res)
+            
+            # Update global stats
+            manager.update_stats(res)
+            
+        return {
+            "summary": {
+                "total": len(results),
+                "blocked": len([r for r in results if r['is_malicious']]),
+                "allowed": len([r for r in results if not r['is_malicious']])
+            },
+            "results": results
+        }
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 @app.post("/mode/{new_mode}")
 def set_mode(new_mode: str):

@@ -3,3 +3,10 @@ uvicorn
 scapy
 websockets
 python-multipart
+pandas
+numpy
+scikit-learn
+joblib
+matplotlib
+seaborn
+tensorflow
