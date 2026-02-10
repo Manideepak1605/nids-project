@@ -1,11 +1,11 @@
 {
-  "total_analyzed": 10289,
-  "allowed": 10085,
-  "blocked": 204,
+  "total_analyzed": 13011,
+  "allowed": 12760,
+  "blocked": 251,
   "attack_types": {
-    "Malware": 107,
-    "SQL Injection": 97
+    "Malware": 133,
+    "SQL Injection": 118
   },
   "risk_level": "LOW",
-  "last_updated": "2026-02-06 15:17:25"
+  "last_updated": "2026-02-09 14:25:11"
 }
