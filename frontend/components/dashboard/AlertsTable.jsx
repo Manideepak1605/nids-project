@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from 'react';
 import { dataService } from '@/services/dataService';
 import { ShieldAlert, Info, AlertTriangle } from 'lucide-react';
@@ -25,6 +26,7 @@ export default function AlertsTable() {
       default: return 'text-blue-400 border-blue-500/50 bg-blue-500/10';
     }
   };
+
   return (
     <div className="rounded-2xl bg-white/5 backdrop-blur border border-white/10 p-6">
       <h3 className="text-white font-semibold mb-4">

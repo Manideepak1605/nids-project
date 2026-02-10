@@ -10,3 +10,5 @@ joblib
 matplotlib
 seaborn
 tensorflow
+flask
+flask-cors

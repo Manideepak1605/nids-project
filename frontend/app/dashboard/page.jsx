@@ -18,23 +18,57 @@ import { DATA_MODE } from "@/config/dataMode";
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dataSource, setDataSource] = useState("Live Stream");
 
   useEffect(() => {
     let statsSynced = false;
 
     const fetchStats = async () => {
       try {
+        // First check localStorage for recent upload/sample results
+        const saved = localStorage.getItem('last_analysis');
+        if (saved) {
+          const data = JSON.parse(saved);
+          if (data.results) {
+            const allowed = data.results.filter(r => r.Status === "ALLOW" || r.Status === "Allow").length;
+            const blocked = data.results.filter(r => r.Status === "BLOCK" || r.Status === "Blocked").length;
+            const total = data.results.length;
+
+            // Map types for the bar chart
+            const attack_types = data.results
+              .filter(r => r.Status === "BLOCK" || r.Status === "Blocked")
+              .reduce((acc, curr) => {
+                const type = curr.Classification || curr.attack_type || "Unknown";
+                acc[type] = (acc[type] || 0) + 1;
+                return acc;
+              }, {});
+
+            setStats({
+              total_analyzed: total,
+              allowed: allowed,
+              blocked: blocked,
+              risk_level: blocked > 10 ? "CRITICAL" : blocked > 5 ? "HIGH" : blocked > 0 ? "MEDIUM" : "LOW",
+              attack_types: attack_types
+            });
+            setDataSource("Captured Dataset");
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Fallback to FastAPI
         const response = await fetch("http://localhost:8000/stats");
         const data = await response.json();
         setStats(data);
+        setDataSource("Real-time Monitor");
 
         // Sync dataService global stats once
-        if (!statsSynced) {
+        if (!statsSynced && data) {
           dataService.globalStats = {
-            total_analyzed: data.total_analyzed,
-            allowed: data.allowed,
-            blocked: data.blocked,
-            attack_types: { ...data.attack_types }
+            total_analyzed: data.total_analyzed || 0,
+            allowed: data.allowed || 0,
+            blocked: data.blocked || 0,
+            attack_types: { ...(data.attack_types || {}) }
           };
           statsSynced = true;
         }
@@ -55,18 +89,19 @@ export default function DashboardPage() {
           total_analyzed: event.global_stats.total_analyzed,
           allowed: event.global_stats.allowed,
           blocked: event.global_stats.blocked,
-          attack_types: { ...event.global_stats.attack_types }
+          attack_types: { ...event.global_stats.attack_types },
+          risk_level: event.global_stats.blocked > 10 ? "CRITICAL" : event.global_stats.blocked > 5 ? "HIGH" : event.global_stats.blocked > 0 ? "MEDIUM" : "LOW"
         }));
+        setDataSource("Real-time Monitor");
       }
     });
 
-    // Refresh every 30 seconds for full consistency check (less frequent since we have WS)
+    // Refresh every 30 seconds for full consistency check
     const interval = setInterval(fetchStats, 30000);
 
     return () => {
       clearInterval(interval);
       unsubscribe();
-      // We don't stop dataService here because other pages (Live Traffic) might need it
     };
   }, []);
 
@@ -82,7 +117,7 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-gradient-to-br from-black via-[#0b0b14] to-black text-gray-200 px-6 py-20">
       <div className="max-w-7xl mx-auto">
 
-        <DashboardHeader />
+        <DashboardHeader source={dataSource} />
 
         <div className="bg-violet-900/20 border border-violet-500/30 rounded-2xl p-6 mb-10 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
@@ -102,21 +137,25 @@ export default function DashboardPage() {
             title="Total Traffic Analyzed"
             value={stats?.total_analyzed?.toLocaleString() || "0"}
             color="blue"
+            href="/alerts"
           />
           <StatCard
             title="Normal Traffic"
             value={stats?.allowed?.toLocaleString() || "0"}
             color="green"
+            href="/alerts"
           />
           <StatCard
             title="Attacks Detected"
             value={stats?.blocked?.toLocaleString() || "0"}
             color="violet"
+            href="/alerts"
           />
           <StatCard
             title="Risk Level"
             value={stats?.risk_level || "LOW"}
             color={stats?.risk_level === "CRITICAL" ? "red" : stats?.risk_level === "HIGH" ? "orange" : "blue"}
+            href="/alerts?severity=high"
           />
         </section>
 
@@ -143,7 +182,7 @@ export default function DashboardPage() {
           <AlertsTable />
         </section>
 
-        {/* System Intelligence Sections (Migrated from Live Traffic Sidebar) */}
+        {/* System Intelligence Sections */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-20">
           <Card glowColor="violet">
             <h2 className="text-xl font-bold text-white mb-4 tracking-tight flex items-center gap-2">

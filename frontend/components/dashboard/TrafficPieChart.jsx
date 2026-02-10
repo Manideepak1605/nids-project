@@ -34,9 +34,12 @@ export default function TrafficPieChart({ normal = 0, attack = 0 }) {
 
   return (
     <div className="rounded-2xl bg-white/5 backdrop-blur border border-white/10 p-6 flex flex-col items-center">
-      <h3 className="text-white font-semibold mb-4 w-full">
-        Traffic Distribution
-      </h3>
+      <div className="w-full mb-4">
+        <h3 className="text-white font-semibold">
+          Traffic Distribution
+        </h3>
+        <p className="text-[10px] text-gray-500 uppercase tracking-widest">Based on analyzed network flows</p>
+      </div>
       <div className="h-64 w-full">
         <Pie data={data} options={options} />
       </div>

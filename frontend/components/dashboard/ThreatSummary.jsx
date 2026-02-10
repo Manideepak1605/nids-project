@@ -52,10 +52,18 @@ export default function ThreatSummary({ riskLevel = "LOW" }) {
         {current.message}
       </p>
 
-      <div className="mt-4 flex gap-4 text-xs font-medium">
-        <span className="text-emerald-400">● Stable Monitoring</span>
-        <span className="text-gray-400">● Real-time Analysis</span>
-        <span className="text-gray-500">● {new Date().toLocaleTimeString()}</span>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/5 pt-4">
+        <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
+          <span className="text-emerald-400">● Stable Monitoring</span>
+          <span className="text-gray-400">● Real-time Analysis</span>
+        </div>
+        <a
+          href="/alerts"
+          className={`flex items-center gap-1.5 text-xs font-bold ${current.text} hover:underline decoration-2 underline-offset-4`}
+        >
+          View latest alerts
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+        </a>
       </div>
     </div>
   );
