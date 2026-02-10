@@ -1,6 +1,6 @@
 import AlertsHeader from "@/components/alerts/AlertsHeader";
 import AlertStatCard from "@/components/alerts/AlertStatCard";
-import AlertsTable from "@/components/alerts/AlertsTable";
+import AlertsTable from "@/components/AlertsTable";
 import LogsTimeline from "@/components/alerts/LogsTimeline";
 
 export default function AlertsPage() {

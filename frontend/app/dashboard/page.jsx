@@ -7,7 +7,7 @@ import StatCard from "@/components/dashboard/StatCard";
 import TrafficPieChart from "@/components/dashboard/TrafficPieChart";
 import AttackBarChart from "@/components/dashboard/AttackBarChart";
 import AttackLineChart from "@/components/dashboard/AttackLineChart";
-import AlertsTable from "@/components/dashboard/AlertsTable";
+import AlertsTable from "@/components/AlertsTable";
 import ThreatSummary from "@/components/dashboard/ThreatSummary";
 import ThreatGeography from "@/components/ThreatGeography";
 import MitigationList from "@/components/MitigationList";
