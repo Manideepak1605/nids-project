@@ -7,3 +7,7 @@ seaborn
 tensorflow
 flask
 flask-cors
+scapy
+fastapi
+uvicorn[standard]
+websockets

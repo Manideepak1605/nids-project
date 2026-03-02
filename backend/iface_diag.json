@@ -1,0 +1,76 @@
+{
+    "working": [
+        {
+            "name": "Local Area Connection* 10",
+            "desc": "WAN Miniport (Network Monitor)",
+            "guid": "{819176E5-FE6A-4065-BEA9-FBE49A97F4C3}"
+        },
+        {
+            "name": "Local Area Connection* 9",
+            "desc": "WAN Miniport (IPv6)",
+            "guid": "{D485B4B6-BAFC-40AA-A103-71FBC31679C7}"
+        },
+        {
+            "name": "Local Area Connection* 8",
+            "desc": "WAN Miniport (IP)",
+            "guid": "{4C68FC0D-FBAA-4D4B-8311-B846C423D6CC}"
+        },
+        {
+            "name": "Wi-Fi",
+            "desc": "MediaTek MT7921 Wi-Fi 6 802.11ax PCIe Adapter",
+            "guid": "{042D21DD-D606-427F-A5E0-D3992048BF82}"
+        },
+        {
+            "name": "Local Area Connection* 2",
+            "desc": "Microsoft Wi-Fi Direct Virtual Adapter #2",
+            "guid": "{0BE4AD36-74E7-465C-B722-BCF57A3AD4D5}"
+        },
+        {
+            "name": "Local Area Connection* 1",
+            "desc": "Microsoft Wi-Fi Direct Virtual Adapter",
+            "guid": "{7FACB3F1-0E35-421B-B524-0DB1D65CE72F}"
+        },
+        {
+            "name": "Loopback Pseudo-Interface 1",
+            "desc": "Software Loopback Interface 1",
+            "guid": "\\Device\\NPF_Loopback"
+        }
+    ],
+    "all": [
+        {
+            "name": "Local Area Connection* 10",
+            "desc": "WAN Miniport (Network Monitor)",
+            "guid": "{819176E5-FE6A-4065-BEA9-FBE49A97F4C3}"
+        },
+        {
+            "name": "Local Area Connection* 9",
+            "desc": "WAN Miniport (IPv6)",
+            "guid": "{D485B4B6-BAFC-40AA-A103-71FBC31679C7}"
+        },
+        {
+            "name": "Local Area Connection* 8",
+            "desc": "WAN Miniport (IP)",
+            "guid": "{4C68FC0D-FBAA-4D4B-8311-B846C423D6CC}"
+        },
+        {
+            "name": "Wi-Fi",
+            "desc": "MediaTek MT7921 Wi-Fi 6 802.11ax PCIe Adapter",
+            "guid": "{042D21DD-D606-427F-A5E0-D3992048BF82}"
+        },
+        {
+            "name": "Local Area Connection* 2",
+            "desc": "Microsoft Wi-Fi Direct Virtual Adapter #2",
+            "guid": "{0BE4AD36-74E7-465C-B722-BCF57A3AD4D5}"
+        },
+        {
+            "name": "Local Area Connection* 1",
+            "desc": "Microsoft Wi-Fi Direct Virtual Adapter",
+            "guid": "{7FACB3F1-0E35-421B-B524-0DB1D65CE72F}"
+        },
+        {
+            "name": "Loopback Pseudo-Interface 1",
+            "desc": "Software Loopback Interface 1",
+            "guid": "\\Device\\NPF_Loopback"
+        }
+    ]
+}

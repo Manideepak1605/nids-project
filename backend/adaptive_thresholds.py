@@ -1,11 +1,17 @@
 import numpy as np
 import collections
-import time
+import logging
+
+logger = logging.getLogger("AdaptiveThresholdController")
 
 class AdaptiveThresholdController:
     """
-    Standalone Adaptive Threshold Controller for NIDS.
-    Dynamically adjusts system thresholds based on recent benign traffic behavior.
+    Stabilized Adaptive Threshold Controller.
+    
+    Safety:
+    - Immutable baseline anchoring.
+    - Strict ±15% Drift Cap.
+    - Numerical stability guards for NaN/Inf.
     """
     
     def __init__(self, 
@@ -14,94 +20,70 @@ class AdaptiveThresholdController:
                  max_bounds, 
                  window_size=100, 
                  alpha=0.01, 
-                 cooldown_samples=50,
-                 percentile=99):
-        """
-        :param initial_thresholds: Dict of {name: value} for starting thresholds.
-        :param min_bounds: Dict of {name: min_value} for absolute minimums.
-        :param max_bounds: Dict of {name: max_value} for absolute maximums.
-        :param window_size: Number of samples to keep in the benign score buffer.
-        :param alpha: Adaptation rate (0.0 < alpha < 1.0).
-        :param cooldown_samples: Minimum samples between updates per threshold.
-        :param percentile: Percentile to use for candidate threshold calculation.
-        """
-        self.thresholds = initial_thresholds.copy()
+                 drift_cap=0.15):
+        # Immutable anchoring
+        self.baselines = {name: float(val) for name, val in initial_thresholds.items() if np.isfinite(val)}
+        self.thresholds = self.baselines.copy()
         self.min_bounds = min_bounds
         self.max_bounds = max_bounds
         self.window_size = window_size
         self.alpha = alpha
-        self.cooldown_samples = cooldown_samples
-        self.percentile = percentile
+        self.drift_cap = drift_cap
         
-        # Buffers and counters
-        self.buffers = {name: collections.deque(maxlen=window_size) for name in initial_thresholds}
-        self.update_counters = {name: 0 for name in initial_thresholds}
-        self.last_update_msg = "Initialized"
+        self.buffers = {name: collections.deque(maxlen=window_size) for name in self.baselines}
+        self.is_frozen = False
 
-    def add_benign_samples(self, samples_dict):
-        """
-        Add recent benign scores to the buffers and trigger adaptation if ready.
-        :param samples_dict: Dict of {threshold_name: [list of scores]} or {name: single_score}
-        """
+    def set_freeze(self, should_freeze):
+        self.is_frozen = should_freeze
+
+    def add_benign_samples(self, samples_dict, confidence=1.0):
+        if self.is_frozen or confidence < 0.9:
+            return
+
         for name, scores in samples_dict.items():
             if name not in self.buffers:
                 continue
             
-            if not isinstance(scores, list):
+            if not isinstance(scores, (list, np.ndarray)):
                 scores = [scores]
                 
             for score in scores:
-                # Basic outlier filter: Ignore values far beyond max bound
-                if score > self.max_bounds[name] * 1.5:
+                if not np.isfinite(score) or score < 0:
                     continue
-                
+                # reject outliers > 2x max bound
+                if score > self.max_bounds[name] * 2.0:
+                    continue
                 self.buffers[name].append(score)
-                self.update_counters[name] += 1
-                
-                # Check for update trigger
-                if (len(self.buffers[name]) >= self.window_size and 
-                    self.update_counters[name] >= self.cooldown_samples):
-                    self._adapt_threshold(name)
+            
+            if len(self.buffers[name]) >= self.window_size:
+                self._adapt_threshold(name)
 
     def _adapt_threshold(self, name):
-        """Perform statistical adaptation for a specific threshold."""
-        # 1. Compute candidate threshold from buffer percentile
-        candidate = np.percentile(list(self.buffers[name]), self.percentile)
+        # 1. 99th percentile candidate
+        buf_list = list(self.buffers[name])
+        candidate = np.percentile(buf_list, 99)
         
-        # 2. Gradual Update (EMA)
+        # 2. EMA Update
         old_val = self.thresholds[name]
         new_val = (1 - self.alpha) * old_val + self.alpha * candidate
         
-        # 3. Clamp to bounds
-        new_val = max(self.min_bounds[name], min(self.max_bounds[name], new_val))
+        # 3. Drift Cap Anchor (±15% of Baseline)
+        base = self.baselines[name]
+        lower_limit = base * (1.0 - self.drift_cap)
+        upper_limit = base * (1.0 + self.drift_cap)
         
-        # 4. Update and reset counter
-        if abs(new_val - old_val) > 1e-6:
-            self.thresholds[name] = new_val
-            direction = "increased" if new_val > old_val else "decreased"
-            self.last_update_msg = f"Threshold '{name}' {direction} to {new_val:.6f} based on {self.percentile}th percentile."
-            # print(f"[AdaptiveController] {self.last_update_msg}") # Logging
+        # 4. Final Numerical Clamp
+        final_val = max(self.min_bounds[name], lower_limit, 
+                        min(self.max_bounds[name], upper_limit, new_val))
         
-        self.update_counters[name] = 0
+        if not np.isfinite(final_val):
+            logger.error(f"Adapted threshold for {name} is non-finite. Keeping {old_val}.")
+            return
+
+        if abs(final_val - old_val) > 1e-9:
+            self.thresholds[name] = final_val
+            drift_pct = (final_val / base - 1) * 100
+            logger.info(f"Threshold '{name}' -> {final_val:.6f} ({drift_pct:+.2f}% from baseline)")
 
     def get_thresholds(self):
-        """Return the current set of thresholds."""
         return self.thresholds
-
-    def get_status(self):
-        """Return status and log of last update."""
-        return {
-            "current_thresholds": self.thresholds,
-            "last_log": self.last_update_msg,
-            "buffer_fill": {name: len(buf) for name, buf in self.buffers.items()}
-        }
-
-if __name__ == "__main__":
-    # Test instantiation
-    initial = {"ae_mse": 0.1, "multiclass_tau": 0.7}
-    mins = {"ae_mse": 0.05, "multiclass_tau": 0.5}
-    maxs = {"ae_mse": 0.5, "multiclass_tau": 0.9}
-    
-    controller = AdaptiveThresholdController(initial, mins, maxs, alpha=0.1)
-    print("AdaptiveThresholdController initialized.")
-    print(controller.get_thresholds())

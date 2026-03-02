@@ -1,0 +1,74 @@
+[
+    {
+        "str": "\\Device\\NPF_{819176E5-FE6A-4065-BEA9-FBE49A97F4C3}",
+        "name": "Local Area Connection* 10",
+        "description": "WAN Miniport (Network Monitor)",
+        "guid": "{819176E5-FE6A-4065-BEA9-FBE49A97F4C3}",
+        "pcap_name": "NA",
+        "network_name": "\\Device\\NPF_{819176E5-FE6A-4065-BEA9-FBE49A97F4C3}",
+        "ifaceid": "NA"
+    },
+    {
+        "str": "\\Device\\NPF_{D485B4B6-BAFC-40AA-A103-71FBC31679C7}",
+        "name": "Local Area Connection* 9",
+        "description": "WAN Miniport (IPv6)",
+        "guid": "{D485B4B6-BAFC-40AA-A103-71FBC31679C7}",
+        "pcap_name": "NA",
+        "network_name": "\\Device\\NPF_{D485B4B6-BAFC-40AA-A103-71FBC31679C7}",
+        "ifaceid": "NA"
+    },
+    {
+        "str": "\\Device\\NPF_{4C68FC0D-FBAA-4D4B-8311-B846C423D6CC}",
+        "name": "Local Area Connection* 8",
+        "description": "WAN Miniport (IP)",
+        "guid": "{4C68FC0D-FBAA-4D4B-8311-B846C423D6CC}",
+        "pcap_name": "NA",
+        "network_name": "\\Device\\NPF_{4C68FC0D-FBAA-4D4B-8311-B846C423D6CC}",
+        "ifaceid": "NA"
+    },
+    {
+        "str": "\\Device\\NPF_{181CADA6-F058-47B6-BC05-DF11583D93A0}",
+        "name": "Bluetooth Network Connection",
+        "description": "Bluetooth Device (Personal Area Network)",
+        "guid": "{181CADA6-F058-47B6-BC05-DF11583D93A0}",
+        "pcap_name": "NA",
+        "network_name": "\\Device\\NPF_{181CADA6-F058-47B6-BC05-DF11583D93A0}",
+        "ifaceid": "NA"
+    },
+    {
+        "str": "\\Device\\NPF_{042D21DD-D606-427F-A5E0-D3992048BF82}",
+        "name": "Wi-Fi",
+        "description": "MediaTek MT7921 Wi-Fi 6 802.11ax PCIe Adapter",
+        "guid": "{042D21DD-D606-427F-A5E0-D3992048BF82}",
+        "pcap_name": "NA",
+        "network_name": "\\Device\\NPF_{042D21DD-D606-427F-A5E0-D3992048BF82}",
+        "ifaceid": "NA"
+    },
+    {
+        "str": "\\Device\\NPF_{0BE4AD36-74E7-465C-B722-BCF57A3AD4D5}",
+        "name": "Local Area Connection* 2",
+        "description": "Microsoft Wi-Fi Direct Virtual Adapter #2",
+        "guid": "{0BE4AD36-74E7-465C-B722-BCF57A3AD4D5}",
+        "pcap_name": "NA",
+        "network_name": "\\Device\\NPF_{0BE4AD36-74E7-465C-B722-BCF57A3AD4D5}",
+        "ifaceid": "NA"
+    },
+    {
+        "str": "\\Device\\NPF_{7FACB3F1-0E35-421B-B524-0DB1D65CE72F}",
+        "name": "Local Area Connection* 1",
+        "description": "Microsoft Wi-Fi Direct Virtual Adapter",
+        "guid": "{7FACB3F1-0E35-421B-B524-0DB1D65CE72F}",
+        "pcap_name": "NA",
+        "network_name": "\\Device\\NPF_{7FACB3F1-0E35-421B-B524-0DB1D65CE72F}",
+        "ifaceid": "NA"
+    },
+    {
+        "str": "\\Device\\NPF_Loopback",
+        "name": "Loopback Pseudo-Interface 1",
+        "description": "Software Loopback Interface 1",
+        "guid": "\\Device\\NPF_Loopback",
+        "pcap_name": "NA",
+        "network_name": "\\Device\\NPF_Loopback",
+        "ifaceid": "NA"
+    }
+]

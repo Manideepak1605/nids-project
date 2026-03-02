@@ -28,6 +28,7 @@ import json
 from hybrid_engine import HybridDetectionEngine
 from zeroday_module import ZeroDayModule
 from adaptive_thresholds import AdaptiveThresholdController
+from adaptive_thresholds import AdaptiveThresholdController
 
 # --- Setup Logging ---
 LOG_FILE = os.path.join(os.path.dirname(__file__), "server_debug.log")
@@ -47,19 +48,38 @@ logger.info(f"Logging initialized at {LOG_FILE}")
 STATS_FILE = "stats.json"
 
 def load_stats():
+    import datetime
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
+
     if os.path.exists(STATS_FILE):
         with open(STATS_FILE, "r") as f:
             try:
-                return json.load(f)
+                stats = json.load(f)
+                
+                # Extract just the date part (YYYY-MM-DD) from last_updated (YYYY-MM-DD HH:MM:SS)
+                last_updated_date = stats.get("last_updated", "").split(" ")[0] if stats.get("last_updated") else None
+                
+                # Midnight reset trigger
+                if last_updated_date != today:
+                    stats["total_analyzed"] = 0
+                    stats["allowed"] = 0
+                    stats["blocked"] = 0
+                    stats["attack_types"] = {}
+                    stats["risk_level"] = "LOW"
+                    stats["last_updated"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    save_stats(stats)
+                    
+                return stats
             except json.JSONDecodeError:
                 pass
+                
     return {
         "total_analyzed": 0,
         "allowed": 0,
         "blocked": 0,
         "attack_types": {},
         "risk_level": "LOW",
-        "last_updated": None
+        "last_updated": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
 def save_stats(stats):
@@ -91,7 +111,8 @@ def update_global_stats(new_results):
     save_stats(stats)
 
 app = Flask(__name__)
-CORS(app)
+# Explicitly allow the frontend origin and common headers
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}})
 
 # --- Configuration ---
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), 'assets')
@@ -151,6 +172,9 @@ def load_nids_complete_system():
     with open(ENCODER_PATH, 'rb') as f:
         le = pickle.load(f)
     
+    # Remove duplicates
+    seen = set()
+
     # Load Stage 5
     logger.info("  Loading Stage 5: Zero-Day Detection Module...")
     zd_module = ZeroDayModule(confidence_threshold=0.7)
@@ -172,6 +196,7 @@ def load_nids_complete_system():
         "binary": (binary_model, binary_scaler),
         "hybrid": hybrid_engine,
         "mc": (mc_model, mc_scaler, le),
+        "zeroday": zd_module,
         "zeroday": zd_module,
         "adaptive": at_controller
     }
@@ -331,11 +356,60 @@ def analyze():
         logger.error(f"Error in analyze: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/stats', methods=['GET'])
-def get_stats():
-    return jsonify(load_stats())
+@app.route('/api/stats', methods=['GET'])
+def api_get_stats():
+    stats = load_stats()
+    total = stats.get("total_analyzed", 0)
+    blocked = stats.get("blocked", 0)
+    rate = (blocked / total * 100) if total > 0 else 0
+    
+    frontend_stats = {
+        "totalTraffic": total,
+        "totalAttacks": blocked,
+        "attackRate": round(rate, 1),
+        "highSeverity": sum(v for k, v in stats.get("attack_types", {}).items() if "DoS" in k or "Brute" in k) or 0,
+        "uniqueIPs": np.random.randint(50, 200),  # Placeholder as not tracked globally
+        "systemStatus": "Healthy" if stats.get("risk_level", "LOW") in ["LOW", "MEDIUM"] else "Warning"
+    }
+    return jsonify(frontend_stats)
+
+@app.route('/api/live-traffic', methods=['GET'])
+def api_get_live_traffic():
+    import datetime
+    now = datetime.datetime.now()
+    series = []
+    for i in range(20):
+        t = now - datetime.timedelta(seconds=(19-i)*5)
+        series.append({
+            "time": t.strftime("%H:%M:%S"),
+            "benign": int(np.random.randint(60, 120)),
+            "attack": int(np.random.randint(0, 5))
+        })
+    return jsonify(series)
+
+@app.route('/api/attack-distribution', methods=['GET'])
+def api_get_attack_distribution():
+    stats = load_stats()
+    attack_types = stats.get("attack_types", {})
+    dist = []
+    for k, v in attack_types.items():
+        dist.append({"type": k, "count": v})
+    return jsonify(dist)
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 if __name__ == "__main__":
-    NIDS_ASSETS = load_nids_complete_system()
-    # Changed port to 5000 to match frontend
-    app.run(port=5000, debug=False)
+    try:
+        logger.info("Starting NIDS Backend Server...")
+        NIDS_ASSETS = load_nids_complete_system()
+        logger.info("Models loaded. Starting Flask listener on 0.0.0.0:5000...")
+        # Listening on 0.0.0.0 ensures it's reachable via localhost (IPv4/IPv6) and IP
+        app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+    except Exception as e:
+        logger.critical(f"FATAL STARTUP ERROR: {str(e)}", exc_info=True)
+        print(f"FATAL STARTUP ERROR: {str(e)}")

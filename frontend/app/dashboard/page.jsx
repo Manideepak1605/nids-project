@@ -1,128 +1,67 @@
 "use client";
-import { useState, useEffect } from "react";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import StatCard from "@/components/dashboard/StatCard";
-import TrafficPieChart from "@/components/dashboard/TrafficPieChart";
-import AttackBarChart from "@/components/dashboard/AttackBarChart";
-import AttackLineChart from "@/components/dashboard/AttackLineChart";
-import AlertsTable from "@/components/dashboard/AlertsTable";
-import ThreatSummary from "@/components/dashboard/ThreatSummary";
+import React from "react";
+import { useLiveData } from "@/hooks/useLiveData";
+import KpiCards from "@/components/dashboard/KpiCards";
+import RealTimeLineChart from "@/components/dashboard/RealTimeLineChart";
+import AttackPieChart from "@/components/dashboard/AttackPieChart";
+import ThreatFeed from "@/components/dashboard/ThreatFeed";
+import { Clock } from "lucide-react";
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [dataSource, setDataSource] = useState("Live Stream");
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // First check localStorage for recent upload/sample results
-        const saved = localStorage.getItem('last_analysis');
-        if (saved) {
-          const data = JSON.parse(saved);
-          if (data.results) {
-            const allowed = data.results.filter(r => r.Status === "ALLOW").length;
-            const blocked = data.results.filter(r => r.Status === "BLOCK").length;
-            const total = data.results.length;
-
-            // Map types for the bar chart
-            const attack_types = data.results
-              .filter(r => r.Status === "BLOCK")
-              .reduce((acc, curr) => {
-                acc[curr.Classification] = (acc[curr.Classification] || 0) + 1;
-                return acc;
-              }, {});
-
-            setStats({
-              total_analyzed: total,
-              allowed: allowed,
-              blocked: blocked,
-              risk_level: blocked > 10 ? "CRITICAL" : blocked > 5 ? "HIGH" : blocked > 0 ? "MEDIUM" : "LOW",
-              attack_types: attack_types
-            });
-            setDataSource("Captured Dataset");
-            setLoading(false);
-            return;
-          }
-        }
-
-        // Fallback or Real-time polling
-        const response = await fetch("http://localhost:5000/stats");
-        const data = await response.json();
-        setStats(data);
-        setDataSource("Real-time Monitor");
-      } catch (error) {
-        console.error("Error fetching stats:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-    const interval = setInterval(fetchStats, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500"></div>
-      </div>
-    );
-  }
+  const { kpi, timeSeries, attackDist, recentAlerts, lastUpdated, hasNewAttack, isConnected, isLoading } = useLiveData();
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-black via-[#0b0b14] to-black text-gray-200 px-6 py-20">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#07070a] text-gray-200">
 
-        <DashboardHeader source={dataSource} />
+      {/* Top Background Glows */}
+      <div className="fixed top-0 left-64 w-[500px] h-[300px] bg-violet-600/10 blur-[130px] rounded-full pointer-events-none"></div>
+      <div className="fixed top-0 right-0 w-[400px] h-[400px] bg-blue-600/5 blur-[120px] rounded-full pointer-events-none"></div>
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-14">
-          <StatCard
-            title="Total Traffic Analyzed"
-            value={stats?.total_analyzed?.toLocaleString() || "0"}
-            color="blue"
-            href="/alerts"
-          />
-          <StatCard
-            title="Normal Traffic"
-            value={stats?.allowed?.toLocaleString() || "0"}
-            color="green"
-            href="/alerts"
-          />
-          <StatCard
-            title="Attacks Detected"
-            value={stats?.blocked?.toLocaleString() || "0"}
-            color="violet"
-            href="/alerts"
-          />
-          <StatCard
-            title="Risk Level"
-            value={stats?.risk_level || "LOW"}
-            color={stats?.risk_level === "CRITICAL" ? "red" : stats?.risk_level === "HIGH" ? "orange" : "blue"}
-            href="/alerts?severity=high"
-          />
-        </section>
+      <main className="p-3 md:p-4 lg:p-6 max-w-screen-2xl mx-auto min-h-screen">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] text-gray-400">
+            <div className="w-12 h-12 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mb-4"></div>
+            <p className="font-mono text-sm uppercase tracking-widest">Initializing Telemetry...</p>
+          </div>
+        ) : (
+          <>
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-3 border-b border-white/5 pb-4">
+              <div>
+                <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-white tracking-tighter uppercase">
+                  Security Overview
+                </h1>
+                <p className="text-sm font-mono text-gray-400 mt-1">Core Telemetry & Live Threat Vectors</p>
+              </div>
 
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-14">
-          <TrafficPieChart
-            normal={stats?.allowed || 0}
-            attack={stats?.blocked || 0}
-          />
+              <div className="flex items-center gap-3 bg-black/40 border border-white/5 py-2 px-4 rounded-xl">
+                <Clock size={14} className="text-violet-400" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-gray-500 uppercase font-bold leading-tight">Last Sync (5s)</span>
+                  <span className="text-xs font-mono text-white leading-tight">{lastUpdated}</span>
+                </div>
+                {!isConnected && (
+                  <span className="ml-2 px-2 py-0.5 bg-yellow-500/20 text-yellow-500 text-[10px] rounded font-bold uppercase">Fallback Mode</span>
+                )}
+              </div>
+            </div>
 
-          <AttackBarChart
-            attackTypes={stats?.attack_types || {}}
-          />
+            {/* Level 1: KPIs */}
+            <KpiCards />
 
-          <AttackLineChart />
-        </section>
+            {/* Level 2: Charts (Line + Pie) */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 mb-6">
+              <RealTimeLineChart data={timeSeries} />
+              <AttackPieChart data={attackDist} />
+            </div>
 
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ThreatSummary riskLevel={stats?.risk_level} />
-          <AlertsTable />
-        </section>
-
-      </div>
-    </main>
+            {/* Level 3: Feed */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+              <ThreatFeed alerts={recentAlerts} hasNewAttack={hasNewAttack} />
+            </div>
+          </>
+        )}
+      </main>
+    </div>
   );
 }
