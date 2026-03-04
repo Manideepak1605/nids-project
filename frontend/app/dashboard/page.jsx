@@ -8,7 +8,7 @@ import ThreatFeed from "@/components/dashboard/ThreatFeed";
 import { Clock } from "lucide-react";
 
 export default function DashboardPage() {
-  const { kpi, timeSeries, attackDist, recentAlerts, lastUpdated, hasNewAttack, isConnected, isLoading } = useLiveData();
+  const { kpi, timeSeries, attackDist, recentAlerts, lastUpdated, hasNewAttack, isConnected, isLoading, handleRetry } = useLiveData();
 
   return (
     <div className="min-h-screen bg-[#07070a] text-gray-200">
@@ -47,7 +47,12 @@ export default function DashboardPage() {
             </div>
 
             {/* Level 1: KPIs */}
-            <KpiCards />
+            <KpiCards
+              data={kpi}
+              loading={isLoading}
+              error={!isConnected ? "Disconnected" : null}
+              handleRetry={handleRetry}
+            />
 
             {/* Level 2: Charts (Line + Pie) */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 mb-6">

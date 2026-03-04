@@ -2,10 +2,8 @@
 import { Activity, ShieldAlert, BarChart3, Fingerprint, ActivitySquare, ServerCrash, RefreshCw } from "lucide-react";
 import Card from "../ui/Card";
 import AnimatedCounter from "../ui/AnimatedCounter";
-import { useDashboardStats } from "../../hooks/useDashboardStats";
-
-export default function KpiCards() {
-    const { data: kpi, loading, error, handleRetry } = useDashboardStats();
+export default function KpiCards({ data: kpi, loading, error, handleRetry }) {
+    if (!kpi) return null;
 
     const cards = [
         {

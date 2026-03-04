@@ -141,5 +141,15 @@ export function useLiveData() {
         [lastUpdated]
     );
 
-    return { kpi, timeSeries, attackDist, recentAlerts, lastUpdated: formattedLastUpdated, hasNewAttack, isConnected, isLoading };
+    return {
+        kpi,
+        timeSeries,
+        attackDist,
+        recentAlerts,
+        lastUpdated: formattedLastUpdated,
+        hasNewAttack,
+        isConnected,
+        isLoading,
+        handleRetry: fetchData
+    };
 }
